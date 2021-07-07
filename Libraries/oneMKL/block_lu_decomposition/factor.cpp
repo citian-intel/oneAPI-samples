@@ -24,17 +24,12 @@
 * Input block tridiagonal matrix A is randomly generated.
 */
 
-#include <CL/sycl.hpp>
 #include <cstdint>
 #include <iostream>
 #include <vector>
-#include "mkl.h"
-#if __has_include("oneapi/mkl.hpp")
+
+#include <CL/sycl.hpp>
 #include "oneapi/mkl.hpp"
-#else
-// Beta09 compatibility -- not needed for new code.
-#include "mkl_sycl.hpp"
-#endif
 
 using namespace oneapi;
 
@@ -77,8 +72,14 @@ int main(){
     sycl::queue queue(device, error_handler);
     sycl::context context = queue.get_context();
 
+    if (device.is_gpu() && device.get_platform().get_backend() != sycl::backend::level_zero) {
+        std::cerr << "This sample requires Level Zero when running on GPUs." << std::endl;
+        std::cerr << "Please check your system configuration." << std::endl;
+        return 0;
+    }
+
     if (device.get_info<sycl::info::device::double_fp_config>().empty()) {
-        std::cerr << "The sample uses double precision, which is not supported" << std::endl;
+        std::cerr << "This sample uses double precision, which is not supported" << std::endl;
         std::cerr << "by the selected device. Quitting." << std::endl;
         return 0;
     }
